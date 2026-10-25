@@ -1,0 +1,12 @@
+[
+  {
+    "id": 100,
+    "text": "&About",
+    "flags": 0
+  },
+  {
+    "id": 200,
+    "text": "&Level",
+    "flags": 128
+  }
+]

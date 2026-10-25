@@ -1,0 +1,11 @@
+[package]
+name = "rock"
+version = "1.0.0"
+edition = "2021"
+description = "Rust port of ROCK, Dale O'Brien's 1993 Windows 3.x boulder/diamond game"
+
+[dependencies]
+macroquad = { version = "0.4", default-features = false }
+
+[profile.release]
+opt-level = 3

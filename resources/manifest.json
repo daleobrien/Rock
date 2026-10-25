@@ -1,0 +1,299 @@
+[
+  {
+    "type": "BITMAP",
+    "name": "BOULDER",
+    "flags": "0x30",
+    "size": 344,
+    "width": 20,
+    "height": 20,
+    "bpp": 4
+  },
+  {
+    "type": "BITMAP",
+    "name": "BOUNDS",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "CHERRY",
+    "flags": "0x30",
+    "size": 344,
+    "width": 20,
+    "height": 20,
+    "bpp": 4
+  },
+  {
+    "type": "BITMAP",
+    "name": "DIA256",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "DIAMOND",
+    "flags": "0x30",
+    "size": 344,
+    "width": 20,
+    "height": 20,
+    "bpp": 4
+  },
+  {
+    "type": "BITMAP",
+    "name": "DOOR",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "EARTH",
+    "flags": "0x30",
+    "size": 344,
+    "width": 20,
+    "height": 20,
+    "bpp": 4
+  },
+  {
+    "type": "BITMAP",
+    "name": "EMPTY",
+    "flags": "0x30",
+    "size": 344,
+    "width": 20,
+    "height": 20,
+    "bpp": 4
+  },
+  {
+    "type": "BITMAP",
+    "name": "FBOULDER",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "FDIAMOND",
+    "flags": "0x30",
+    "size": 344,
+    "width": 20,
+    "height": 20,
+    "bpp": 4
+  },
+  {
+    "type": "BITMAP",
+    "name": "FNBOULDER",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "FNDIAMOND",
+    "flags": "0x30",
+    "size": 344,
+    "width": 20,
+    "height": 20,
+    "bpp": 4
+  },
+  {
+    "type": "BITMAP",
+    "name": "LIFE0",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "LIFE1",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "LIFE2",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "LIFE3",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "LIFE4",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "LIFE5",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "LIFE6",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "LIFE7",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "LIFE8",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "LIFE9",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "MAN1",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "MAN2",
+    "flags": "0x1030",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "MORPH1",
+    "flags": "0x30",
+    "size": 344,
+    "width": 20,
+    "height": 20,
+    "bpp": 4
+  },
+  {
+    "type": "BITMAP",
+    "name": "MORPH2",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "MORPH3",
+    "flags": "0x30",
+    "size": 344,
+    "width": 20,
+    "height": 20,
+    "bpp": 4
+  },
+  {
+    "type": "BITMAP",
+    "name": "MORPH4",
+    "flags": "0x30",
+    "size": 1464,
+    "width": 20,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "SCORE1",
+    "flags": "0x30",
+    "size": 1144,
+    "width": 2,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "SCORE2",
+    "flags": "0x30",
+    "size": 1144,
+    "width": 2,
+    "height": 20,
+    "bpp": 8
+  },
+  {
+    "type": "BITMAP",
+    "name": "WALL",
+    "flags": "0x30",
+    "size": 344,
+    "width": 20,
+    "height": 20,
+    "bpp": 4
+  },
+  {
+    "type": "ICON",
+    "name": 1,
+    "flags": "0x1030",
+    "size": 744
+  },
+  {
+    "type": "MENU",
+    "name": "MENU_1",
+    "flags": "0x1030",
+    "size": 26
+  },
+  {
+    "type": "GROUP_ICON",
+    "name": "ICON",
+    "flags": "0x1030",
+    "size": 20
+  }
+]
