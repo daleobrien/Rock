@@ -2,7 +2,7 @@
 
 A port of **ROCK** (Dale O'Brien, January 1993, "Beta Verison 1.0"), originally
 written in Borland Turbo Pascal for Windows 1.5 for Windows 3.x. The original
-source is in `../Pascel ROCK/`; this folder holds the Rust version and
+source is in `Org Pascal/`; this folder holds the Rust version and
 everything extracted from `ROCK20.RES`.
 
 ![All nine levels](screenshots/all_levels.png)
@@ -154,11 +154,3 @@ comment in `src/game.rs`, `src/main.rs` or `src/ui.rs`.
 * **Repainting after a dialog.** Windows repainted only the area a closed
   dialog had covered. The port repaints the whole board, which can change
   which phase the exit flash is in.
-* `ROCK.RTF` is the start of a WinHelp help file that was never hooked up, so
-  there is nothing to port. The Mac files one level up (`ROCK.xcodeproj`,
-  `Start.pas`, `MainUnit.pas`) are a separate Free Pascal/Carbon project and
-  were left alone.
-
-## Re-extracting the resources
-
-    python3 tools/extract_res.py "../Pascel ROCK/ROCK20.RES" resources
