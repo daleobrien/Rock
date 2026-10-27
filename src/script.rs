@@ -30,6 +30,11 @@ impl Script {
         Script { steps, wait: 0 }
     }
 
+    /// True if ROCK_SCRIPT gave any steps.
+    pub fn active(&self) -> bool {
+        !self.steps.is_empty()
+    }
+
     /// Actions for this frame: everything up to the next `wait:N`.
     pub fn next_frame(&mut self) -> Vec<Action> {
         let mut out = Vec::new();

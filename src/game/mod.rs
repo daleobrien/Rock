@@ -233,13 +233,21 @@ impl Game {
         self.run(resume);
         if modal == Modal::LevelInput {
             let chosen = level_text.and_then(|t| t.trim().parse::<i32>().ok());
-            if let Some(n) = chosen.filter(|n| (1..=LAST_LEVEL).contains(n)) {
-                self.level = n - 1;
-                self.run([Step::NextLevel]);
+            if let Some(n) = chosen {
+                self.go_to_level(n);
             }
         }
         // Windows then repainted whatever the box had covered.
         self.paint();
+    }
+
+    /// Start level `n`, as the Level dialog does.  Anything but 1 to 9 is
+    /// ignored.
+    pub fn go_to_level(&mut self, n: i32) {
+        if (1..=LAST_LEVEL).contains(&n) {
+            self.level = n - 1;
+            self.run([Step::NextLevel]);
+        }
     }
 
     // ----- running handlers ----------------------------------------------

@@ -9,10 +9,11 @@
 mod assets;
 mod game;
 mod rng;
+mod save;
 mod script;
 mod ui;
 
-use game::{Dir, Game, FB_H, FB_W};
+use game::{Dir, Game, FB_H, FB_W, LAST_LEVEL};
 use macroquad::prelude::*;
 use script::Action;
 use ui::{Closed, Dialog, MenuBar, MenuCmd, MENU_H};
@@ -90,6 +91,16 @@ struct Held {
 #[macroquad::main(window_conf)]
 async fn main() {
     let mut game = Game::new(assets::sprites());
+    // Carry on where the last run left off.  Scripted runs always start
+    // at level 1 and don't touch the save file.
+    let mut script = script::Script::from_env();
+    let saving = !script.active();
+    if saving {
+        if let Some(n) = save::load() {
+            game.go_to_level(n);
+        }
+    }
+    let mut saved_level = game.level();
     game.paint();
 
     let board_tex = Texture2D::from_rgba8(FB_W as u16, FB_H as u16, game.pixels());
@@ -104,7 +115,6 @@ async fn main() {
     let mut dialog: Option<Dialog> = None;
     let mut since_tick = 0.0;
     let mut held: Option<Held> = None;
-    let mut script = script::Script::from_env();
 
     loop {
         let dt = get_frame_time().min(0.25);
@@ -192,6 +202,14 @@ async fn main() {
                 since_tick - TICK
             };
             game.timer();
+        }
+
+        // Save the level whenever a new one starts.  (While the "All done"
+        // box is open it is one past the last, which isn't saved.)
+        let level = game.level();
+        if saving && level != saved_level && (1..=LAST_LEVEL).contains(&level) {
+            save::store(level);
+            saved_level = level;
         }
 
         // ---- draw ----------------------------------------------------------

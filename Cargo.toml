@@ -5,6 +5,7 @@ edition = "2021"
 description = "Rust port of ROCK, Dale O'Brien's 1993 Windows 3.x boulder/diamond game"
 
 [dependencies]
+directories = "6.0.0"
 macroquad = { version = "0.4", default-features = false }
 
 [profile.release]

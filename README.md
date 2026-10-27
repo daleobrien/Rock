@@ -48,6 +48,12 @@ It is a Boulder Dash–style game played on a 31 x 20 grid of 20-pixel cells.
   level 1.
 * **Menu:** *About* shows the credit box. *Level* asks "Enter 1..9" and jumps
   to that level.
+* The port remembers the level you're on and starts there next time. (The
+  original always started at level 1.) It's saved each time a level starts,
+  in `level.txt` in your user data folder:
+  `~/Library/Application Support/Rock/` on macOS, `%APPDATA%\Rock\data\` on
+  Windows, and `$XDG_DATA_HOME/rock/` (usually `~/.local/share/rock/`) on
+  Linux. Delete the file, or use *Level*, to start again from level 1.
 
 The levels: (1) 67 diamonds among three walls; (2) 35 diamonds with 3
 creatures in a corridor; (3) a diamond vault guarded by 8 creatures next to a
@@ -108,7 +114,8 @@ units) and Windows 3.x to run it.
 | `src/main.rs` | Window, 200 ms timer, keyboard, scaling |
 | `src/ui.rs` | Windows 3.1-style menu bar, message boxes and the Level input dialog |
 | `src/assets.rs` | Embeds the PNGs from `resources/` into the binary |
-| `src/script.rs` | Scripted input for automated screenshots (only used if `ROCK_SCRIPT` is set) |
+| `src/save.rs` | Saves the current level between runs |
+| `src/script.rs` | Scripted input for automated screenshots (only used if `ROCK_SCRIPT` is set; scripted runs start at level 1 and don't save) |
 | `resources/` | Everything extracted from `ROCK20.RES` (see below); the game builds its images in from here |
 | `tools/extract_res.py` | The extractor for 16-bit `.RES` files (needs Pillow) |
 | `screenshots/` | The port running |
