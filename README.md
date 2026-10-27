@@ -3,8 +3,8 @@
 A port of **ROCK** (Dale O'Brien, January 1993, "Beta Verison 1.0"), originally
 written in Borland Turbo Pascal for Windows 1.5 for Windows 3.x. This folder
 holds the Rust version and everything extracted from `ROCK20.RES`. The
-original Pascal source is not part of this repository; see
-[The original source](#the-original-source) for what it is and where it lives.
+original Pascal source is in [`Org Pascal/`](Org%20Pascal/); see
+[The original source](#the-original-source) for what each file is.
 
 ![All nine levels](screenshots/all_levels.png)
 
@@ -65,9 +65,8 @@ evaluating the row and column, so the layouts match the original.
 
 ## The original source
 
-The port is based entirely on the original 1993 program, which is kept
-separately in the `Pascel ROCK` folder inside Dale's `ROCK` folder. On Dale's
-Mac that is `~/Code/ROCK/Pascel ROCK/`. The game rules were ported line by
+The port is based entirely on the original 1993 program, whose files are
+kept unchanged in [`Org Pascal/`](Org%20Pascal/) in this repository. The game rules were ported line by
 line from the Pascal units, every image came out of the resource file, and the
 random-number behaviour was checked against the compiled program.
 
@@ -80,7 +79,6 @@ random-number behaviour was checked against the compiled program.
 | `ROCK.EXE` | 25 Apr 1993 | The compiled 16-bit Windows program. Used to confirm the resources and Turbo Pascal's `Random`. |
 | `ROCK_FUC.TPU`, `ROCK_VAR.TPU` | 24 Apr 1993 | Compiled Turbo Pascal units for the two `.PAS` units. |
 | `ROCK.RTF` | 15 Jan 1993 | The start of a WinHelp help file that was never finished or hooked up. |
-| `ROCK.zip` | 2010 | A Mac archive of the same files (plus editor swap files), with the 1993 timestamps preserved. |
 
 To build the original you would need Borland Turbo Pascal for Windows 1.5
 (its `WObjects`, `WinTypes`, `WinProcs`, `Strings`, `StdDlgs` and `WinCrt`
@@ -90,6 +88,7 @@ units) and Windows 3.x to run it.
 
 | Path | What it is |
 |---|---|
+| `Org Pascal/` | The original 1993 Turbo Pascal source, resources and compiled program |
 | `src/game/mod.rs` | The `Game` type the window drives: timer, keys, menu commands and message boxes |
 | `src/game/tile.rs` | What a cell can hold (boulder, diamond, creature frame...) and what each kind does |
 | `src/game/board.rs` | The 31 x 20 board, positions and directions |
@@ -201,4 +200,4 @@ same.
 Point the extractor at `ROCK20.RES` in the original source folder. On Dale's
 Mac:
 
-    python3 tools/extract_res.py ~/Code/ROCK/"Pascel ROCK"/ROCK20.RES resources
+    python3 tools/extract_res.py "Org Pascal/ROCK20.RES" resources
