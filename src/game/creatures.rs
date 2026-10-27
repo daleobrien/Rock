@@ -1,7 +1,7 @@
 //! The "life" creatures: wall-followers that kill the man on contact and
 //! turn into diamonds when crushed or trapped (`Lifemove`, `Explode`).
 
-use super::board::{Dir, Pos};
+use super::board::{Dir, Pos, COLS, ROWS};
 use super::tile::Tile;
 use super::Game;
 
@@ -29,9 +29,9 @@ pub struct Creature {
 impl Game {
     /// Place creature number `id` (1-based; its parity decides which way it
     /// turns).  Its `prev` position is carried over from whatever the record
-    /// last held, as in the original.
-    pub(super) fn place_creature(&mut self, id: usize, col: i32, row: i32) {
-        let pos = Pos::new(col, row);
+    /// last held, as in the original.  A `hidden` one isn't put on the
+    /// board until it first moves.
+    pub(super) fn place_creature(&mut self, id: usize, pos: Pos, hidden: bool) {
         let frame = (id % 9) as u8;
         let c = &mut self.creatures[id - 1];
         c.pos = pos;
@@ -39,7 +39,9 @@ impl Game {
         c.frame = frame;
         c.dead = false;
         c.patience = PATIENCE;
-        self.board.set(pos, Tile::Life(frame));
+        if !hidden {
+            self.board.set(pos, Tile::Life(frame));
+        }
     }
 
     pub(super) fn move_creatures(&mut self) {
@@ -104,6 +106,25 @@ impl Game {
         if crushed || starved {
             self.fill(pos.col - 1, pos.row - 1, 3, 3, Tile::FDiamond);
             self.creatures[i].dead = true;
+        }
+    }
+
+    /// Fill a `width` x `depth` rectangle at (col, row) with `t`, kept off
+    /// the Bounds wall (`Set_Square`).  Filling over the man kills him.
+    fn fill(&mut self, col: i32, row: i32, width: i32, depth: i32, t: Tile) {
+        let first_col = if col == 1 { 2 } else { col };
+        let first_row = if row == 1 { 2 } else { row };
+        let last_col = (col + width - 1).min(COLS - 1);
+        let last_row = (row + depth - 1).min(ROWS - 1);
+        for c in first_col..=last_col {
+            for r in first_row..=last_row {
+                let p = Pos::new(c, r);
+                if self.board[p].is_man() {
+                    self.just_died = true;
+                    self.alive = false;
+                }
+                self.put(p, t);
+            }
         }
     }
 

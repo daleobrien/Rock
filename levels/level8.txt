@@ -1,0 +1,77 @@
+// Level 8: 50 creatures in open space, each under a boulder on a plug
+// of earth.
+
+diamonds 50
+
+creature 4,6
+creature 4,9
+creature 4,12
+creature 4,15
+creature 4,18
+creature 6,6
+creature 6,9
+creature 6,12
+creature 6,15
+creature 6,18
+creature 8,6
+creature 8,9
+creature 8,12
+creature 8,15
+creature 8,18
+creature 10,6
+creature 10,9
+creature 10,12
+creature 10,15
+creature 10,18
+creature 12,6
+creature 12,9
+creature 12,12
+creature 12,15
+creature 12,18
+creature 14,6
+creature 14,9
+creature 14,12
+creature 14,15
+creature 14,18
+creature 16,6
+creature 16,9
+creature 16,12
+creature 16,15
+creature 16,18
+creature 18,6
+creature 18,9
+creature 18,12
+creature 18,15
+creature 18,18
+creature 20,6
+creature 20,9
+creature 20,12
+creature 20,15
+creature 20,18
+creature 22,6
+creature 22,9
+creature 22,12
+creature 22,15
+creature 22,18
+
+map
+###############################
+#                             #
+#                             #
+#  O O O O O O O O O O        #
+#  . . . . . . . . . .        #
+#  @ @ @ @ @ @ @ @ @ @        #
+#  O O O O O O O O O O        #
+#  . . . . . . . . . .        #
+#  @ @ @ @ @ @ @ @ @ @        #
+#  O O O O O O O O O O       ME
+#  . . . . . . . . . .        #
+#  @ @ @ @ @ @ @ @ @ @        #
+#  O O O O O O O O O O        #
+#  . . . . . . . . . .        #
+#  @ @ @ @ @ @ @ @ @ @        #
+#  O O O O O O O O O O        #
+#  . . . . . . . . . .        #
+#  @ @ @ @ @ @ @ @ @ @        #
+#                             #
+###############################

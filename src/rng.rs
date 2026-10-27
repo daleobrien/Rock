@@ -21,6 +21,13 @@ impl TpRandom {
         self.seed = self.seed.wrapping_mul(134_775_813).wrapping_add(1);
         (((self.seed >> 16) * range as u32) >> 16) as i32
     }
+
+    /// Move on `n` numbers, as if `Random` had been called `n` times.
+    pub fn skip(&mut self, n: u32) {
+        for _ in 0..n {
+            self.random(0);
+        }
+    }
 }
 
 #[cfg(test)]

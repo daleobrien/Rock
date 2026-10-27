@@ -1,0 +1,35 @@
+// Level 3: a diamond vault ringed by 8 creatures hidden in the earth,
+// beside a block of boulders.
+
+diamonds 50
+
+creature 5,3 hidden
+creature 5,13 hidden
+creature 10,3 hidden
+creature 10,13 hidden
+creature 5,8 hidden
+creature 5,18 hidden
+creature 10,8 hidden
+creature 10,18 hidden
+
+map
+###############################
+#..        ...................#
+#.. ...... .OOOOOOOOOOOOOOOOO.#
+#.. .****. .OOOOOOOOOOOOOOOOO.#
+#.. .****. .OOOOOOOOOOOOOOOOO.#
+#.. .****. .OOOOOOOOOOOOOOOOO.#
+#.. .****. .OOOOOOOOOOOOOOOOO.#
+#.. .****. .OOOOOOOOOOOOOOOOO.#
+#M. .****. .OOOOOOOOOOOOOOOOO.#
+#.. .****. .OOOOOOOOOOOOOOOOO.#
+#.. .****. .OOOOOOOOOOOOOOOOO.#
+#.. .****. .OOOOOOOOOOOOOOOOO.#
+#.. .****. .OOOOOOOOOOOOOOOOO.#
+#.. .****. .OOOOOOOOOOOOOOOOO.#
+#.. .****. .OOOOOOOOOOOOOOOOO.#
+#.. .****. .OOOOOOOOOOOOOOOOO.#
+#.. .****. .OOOOOOOOOOOOOOOOO.#
+#.. ...... .OOOOOOOOOOOOOOOOO.#
+#..        ...................E
+###############################

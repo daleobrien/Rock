@@ -1,0 +1,57 @@
+// Level 7: 30 creatures in open space, each under a diamond on a plug
+// of earth.
+
+diamonds 50
+
+creature 4,12
+creature 4,6
+creature 4,18
+creature 6,12
+creature 6,6
+creature 6,18
+creature 8,12
+creature 8,6
+creature 8,18
+creature 10,12
+creature 10,6
+creature 10,18
+creature 12,12
+creature 12,6
+creature 12,18
+creature 14,12
+creature 14,6
+creature 14,18
+creature 16,12
+creature 16,6
+creature 16,18
+creature 18,12
+creature 18,6
+creature 18,18
+creature 20,12
+creature 20,6
+creature 20,18
+creature 22,12
+creature 22,6
+creature 22,18
+
+map
+###############################
+#                             #
+#                             #
+#  * * * * * * * * * *        #
+#  . . . . . . . . . .        #
+#  @ @ @ @ @ @ @ @ @ @        #
+#                             #
+#                             #
+#                             #
+#  * * * * * * * * * *        #
+#  . . . . . . . . . .        #
+#  @ @ @ @ @ @ @ @ @ @        #
+#                             #
+#                             #
+#                             #
+#  * * * * * * * * * *        #
+#  . . . . . . . . . .       ME
+#  @ @ @ @ @ @ @ @ @ @        #
+#                             #
+###############################

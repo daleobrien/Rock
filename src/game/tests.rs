@@ -141,6 +141,44 @@ fn every_level_has_a_man_and_its_creatures() {
 }
 
 #[test]
+fn level_files_parse() {
+    for lvl in 1..=9 {
+        let level = levels::Level::get(lvl);
+        assert_eq!(level.board[level.man], Tile::Man1, "level {lvl}");
+    }
+}
+
+#[test]
+fn level_file_mistakes_are_reported() {
+    let good = include_str!("../../levels/level2.txt");
+    assert!(levels::Level::parse(good).is_ok());
+    let cases = [
+        (good.replace("diamonds 35", "diamonds lots"), "bad number"),
+        (good.replace("diamonds 35", ""), "no `diamonds` line"),
+        (
+            good.replace("creature 10,9 hidden", "creature 10,9"),
+            "isn't on an `@`",
+        ),
+        (
+            good.replace("creature 10,9 hidden", "creature 40,9"),
+            "bad cell",
+        ),
+        (good.replace("#M....", "#M...M"), "more than one man"),
+        (good.replace("#M....", "#....."), "no man"),
+        (good.replace("#M....", "#M...?"), "unknown map character"),
+        (good.replace("#M....", ".M...."), "the edge"),
+        (good.replace("#M....", "#M..."), "31 wide"),
+        (good.replace("map\n", "map\n#\n"), "31 wide"),
+        (format!("{good}more"), "after the map"),
+        (good.replace("\nmap\n", "\nmup\n"), "don't understand"),
+    ];
+    for (text, error) in cases {
+        let e = levels::Level::parse(&text).unwrap_err();
+        assert!(e.contains(error), "expected {error:?}, got {e:?}");
+    }
+}
+
+#[test]
 fn out_of_range_level_gets_level_1() {
     let mut g = game();
     let level1 = g.board.clone();

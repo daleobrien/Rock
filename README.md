@@ -63,6 +63,11 @@ of every level. The port uses Turbo Pascal's exact generator, which I checked
 against the code linked into `ROCK.EXE`, plus the original's order of
 evaluating the row and column, so the layouts match the original.
 
+The layouts are now kept as text files in [`levels/`](levels/), one per
+level, with the board drawn out cell by cell. They were generated from the
+original's level code, so they include those scattered diamonds and boulders
+exactly where the original put them.
+
 ## The original source
 
 The port is based entirely on the original 1993 program, whose files are
@@ -95,7 +100,8 @@ units) and Windows 3.x to run it.
 | `src/game/physics.rs` | Falling and rolling, and the morph |
 | `src/game/creatures.rs` | The wall-following creatures |
 | `src/game/player.rs` | Moving, digging, pushing and dying |
-| `src/game/levels.rs` | The nine levels |
+| `levels/` | The nine levels, one text file each: settings plus a picture of the board (format in [`levels/README.md`](levels/README.md)) |
+| `src/game/levels.rs` | Reads the level files, which are compiled into the binary |
 | `src/game/render.rs` | The framebuffer and bitmaps it draws into |
 | `src/game/tests.rs` | Tests |
 | `src/rng.rs` | Turbo Pascal's `Random`, bit for bit |
