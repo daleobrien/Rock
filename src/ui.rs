@@ -1,7 +1,10 @@
 //! Stand-ins for the Windows 3.1 chrome the original got for free: the menu
 //! bar from the MENU_1 resource, MessageBox, and OWL's TInputDialog.
+//!
+//! Everything is drawn in virtual-screen coordinates (the 620-pixel-wide
+//! window), and takes the mouse position in the same coordinates.
 
-use crate::game::Modal;
+use crate::game::{Modal, FB_W};
 use macroquad::prelude::*;
 
 pub const MENU_H: f32 = 20.0;
@@ -12,7 +15,11 @@ const DARK: Color = Color::new(0.5, 0.5, 0.5, 1.0);
 const FONT: u16 = 16;
 
 fn text(s: &str, x: f32, y: f32, color: Color) {
-    draw_text(s, x.floor(), y.floor(), FONT as f32, color);
+    draw_text(s, x.floor(), y.floor(), f32::from(FONT), color);
+}
+
+fn text_w(s: &str) -> f32 {
+    measure_text(s, None, FONT, 1.0).width
 }
 
 /// A 1px rectangle outline drawn with filled rects, so it stays crisp when
@@ -24,208 +31,185 @@ fn outline(r: Rect, color: Color) {
     draw_rectangle(r.x + r.w - 1.0, r.y, 1.0, r.h, color);
 }
 
-fn text_w(s: &str) -> f32 {
-    measure_text(s, None, FONT, 1.0).width
-}
-
 /// Text with the first letter underlined, for "&About" style labels.
 fn mnemonic(s: &str, x: f32, y: f32, color: Color) {
     text(s, x, y, color);
-    let w = text_w(&s[..1]);
-    draw_rectangle(x, y + 2.0, w, 1.0, color);
+    draw_rectangle(x, y + 2.0, text_w(&s[..1]), 1.0, color);
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+/// Tracks a mouse press on one of several buttons: like Windows, a button
+/// only fires if the mouse is released over the one it was pressed on.
+#[derive(Default)]
+struct Clicks {
+    pressed: Option<usize>,
+}
+
+impl Clicks {
+    fn update(&mut self, rects: &[Rect], mouse: Vec2) -> Option<usize> {
+        let hit = rects.iter().position(|r| r.contains(mouse));
+        if is_mouse_button_pressed(MouseButton::Left) {
+            self.pressed = hit;
+        }
+        if is_mouse_button_released(MouseButton::Left) {
+            return self.pressed.take().filter(|&p| Some(p) == hit);
+        }
+        None
+    }
+
+    /// Whether button `i` should be drawn pushed in.
+    fn is_down(&self, i: usize, rect: Rect, mouse: Vec2) -> bool {
+        self.pressed == Some(i) && rect.contains(mouse)
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum MenuCmd {
-    /// cm_first + 100
     About,
-    /// cm_first + 200
     Level,
 }
 
 /// MENU_1: two top-level commands, "&About" (100) and "&Level" (200).
 pub struct MenuBar {
-    pressed: Option<usize>,
+    rects: [Rect; 2],
+    clicks: Clicks,
 }
 
 const MENU_ITEMS: [(&str, MenuCmd); 2] = [("About", MenuCmd::About), ("Level", MenuCmd::Level)];
 
 impl MenuBar {
     pub fn new() -> Self {
-        MenuBar { pressed: None }
-    }
-
-    fn item_rects() -> [Rect; 2] {
         let mut x = 0.0;
-        let mut out = [Rect::default(); 2];
-        for (i, (label, _)) in MENU_ITEMS.iter().enumerate() {
+        let rects = MENU_ITEMS.map(|(label, _)| {
             let w = text_w(label) + 16.0;
-            out[i] = Rect::new(x, 0.0, w, MENU_H - 1.0);
+            let r = Rect::new(x, 0.0, w, MENU_H - 1.0);
             x += w;
+            r
+        });
+        MenuBar {
+            rects,
+            clicks: Clicks::default(),
         }
-        out
     }
 
-    /// Windows menus act on button release over the item pressed.
     pub fn handle_mouse(&mut self, mouse: Vec2) -> Option<MenuCmd> {
-        let hit = Self::item_rects().iter().position(|r| r.contains(mouse));
-        if is_mouse_button_pressed(MouseButton::Left) {
-            self.pressed = hit;
-        }
-        if is_mouse_button_released(MouseButton::Left) {
-            if let Some(p) = self.pressed.take().filter(|&p| Some(p) == hit) {
-                return Some(MENU_ITEMS[p].1);
-            }
-        }
-        None
+        self.clicks
+            .update(&self.rects, mouse)
+            .map(|i| MENU_ITEMS[i].1)
     }
 
-    pub fn draw(&self, enabled: bool) {
-        draw_rectangle(0.0, 0.0, screen_w(), MENU_H, WHITE);
-        draw_rectangle(0.0, MENU_H - 1.0, screen_w(), 1.0, BLACK);
-        for (i, r) in Self::item_rects().iter().enumerate() {
-            let hot = enabled && self.pressed == Some(i) && r.contains(cur_mouse());
-            let fg = if hot { WHITE } else { BLACK };
+    pub fn draw(&self, enabled: bool, mouse: Vec2) {
+        let w = FB_W as f32;
+        draw_rectangle(0.0, 0.0, w, MENU_H, WHITE);
+        draw_rectangle(0.0, MENU_H - 1.0, w, 1.0, BLACK);
+        for (i, (r, (label, _))) in self.rects.iter().zip(MENU_ITEMS).enumerate() {
+            let hot = enabled && self.clicks.is_down(i, *r, mouse);
             if hot {
                 draw_rectangle(r.x, r.y, r.w, r.h, NAVY);
             }
-            mnemonic(MENU_ITEMS[i].0, r.x + 8.0, 14.0, fg);
+            mnemonic(label, r.x + 8.0, 14.0, if hot { WHITE } else { BLACK });
         }
     }
 }
 
-fn screen_w() -> f32 {
-    crate::game::FB_W as f32
+/// How a dialog was closed.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Closed {
+    Ok,
+    Cancel,
 }
 
-thread_local!(static MOUSE: std::cell::Cell<Vec2> = const { std::cell::Cell::new(Vec2::ZERO) });
-
-/// The mouse position in virtual-screen coordinates, set by main.rs each frame.
-pub fn set_mouse(v: Vec2) {
-    MOUSE.with(|m| m.set(v));
-}
-
-fn cur_mouse() -> Vec2 {
-    MOUSE.with(|m| m.get())
-}
-
-/// A MessageBox(MB_OK) or the Level input dialog.
+/// A MessageBox(MB_OK) or the Level input dialog, centred in the view.
 pub struct Dialog {
     pub modal: Modal,
+    /// The Level dialog's edit box.
     edit: String,
     /// Edit text is selected when the dialog opens, so typing replaces it.
     selected: bool,
-    pressed: Option<usize>,
     rect: Rect,
+    buttons: Vec<Rect>,
+    labels: &'static [&'static str],
+    clicks: Clicks,
 }
 
 impl Dialog {
-    pub fn new(modal: Modal, level_text: &str) -> Self {
+    pub fn new(modal: Modal, initial_text: &str, view: Vec2) -> Self {
         let is_input = modal == Modal::LevelInput;
-        let w = if is_input {
-            220.0
+        let (w, h) = if is_input {
+            (220.0, 120.0)
         } else {
-            (text_w(modal.text()).max(text_w(modal.title())) + 60.0).max(160.0)
+            let w = text_w(modal.text()).max(text_w(modal.title())) + 60.0;
+            (w.max(160.0), 100.0)
         };
-        let h = if is_input { 120.0 } else { 100.0 };
+        let rect = Rect::new(
+            ((view.x - w) / 2.0).floor(),
+            ((view.y - h) / 2.0).floor(),
+            w,
+            h,
+        );
+
+        let (bw, bh, gap) = (64.0, 24.0, 16.0);
+        let y = rect.bottom() - bh - 10.0;
+        let labels: &'static [&'static str] = if is_input { &["OK", "Cancel"] } else { &["OK"] };
+        let total = labels.len() as f32 * (bw + gap) - gap;
+        let x0 = rect.x + (rect.w - total) / 2.0;
+        let buttons = (0..labels.len())
+            .map(|i| Rect::new(x0 + i as f32 * (bw + gap), y, bw, bh))
+            .collect();
+
         Dialog {
             modal,
-            edit: level_text.chars().take(1).collect(),
+            edit: initial_text.chars().take(1).collect(),
             selected: true,
-            pressed: None,
-            rect: Rect::new(0.0, 0.0, w, h),
+            rect,
+            buttons,
+            labels,
+            clicks: Clicks::default(),
         }
     }
 
-    fn placed(&self, vw: f32, vh: f32) -> Rect {
-        let r = self.rect;
-        Rect::new(
-            ((vw - r.w) / 2.0).floor(),
-            ((vh - r.h) / 2.0).floor(),
-            r.w,
-            r.h,
-        )
+    /// What is in the edit box.
+    pub fn text(&self) -> &str {
+        &self.edit
     }
 
-    /// Button rectangles relative to the dialog: OK (and Cancel).
-    fn buttons(&self, at: Rect) -> Vec<Rect> {
-        let bw = 64.0;
-        let bh = 24.0;
-        let y = at.y + at.h - bh - 10.0;
-        if self.modal == Modal::LevelInput {
-            let gap = 16.0;
-            let x0 = at.x + (at.w - 2.0 * bw - gap) / 2.0;
-            vec![
-                Rect::new(x0, y, bw, bh),
-                Rect::new(x0 + bw + gap, y, bw, bh),
-            ]
-        } else {
-            vec![Rect::new(at.x + (at.w - bw) / 2.0, y, bw, bh)]
-        }
-    }
-
-    fn ok(&self) -> Option<Option<String>> {
-        if self.modal == Modal::LevelInput {
-            Some(Some(self.edit.clone()))
-        } else {
-            Some(None)
-        }
-    }
-
-    /// Returns Some(result) when the dialog closes: Some(Some(text)) for OK
-    /// on the input dialog, Some(None) for Cancel or a message box.
+    /// Returns how the dialog was closed, if it was.
     pub fn handle_input(
         &mut self,
         pressed: &[KeyCode],
         chars: &[char],
         mouse: Vec2,
-    ) -> Option<Option<String>> {
+    ) -> Option<Closed> {
         let is_input = self.modal == Modal::LevelInput;
-        if pressed.contains(&KeyCode::Enter) || pressed.contains(&KeyCode::KpEnter) {
-            return self.ok();
+        let key = |k| pressed.contains(&k);
+        if key(KeyCode::Enter) || key(KeyCode::KpEnter) || (!is_input && key(KeyCode::Space)) {
+            return Some(Closed::Ok);
         }
-        if pressed.contains(&KeyCode::Escape) {
-            return Some(None);
-        }
-        if !is_input && pressed.contains(&KeyCode::Space) {
-            return Some(None);
+        if key(KeyCode::Escape) {
+            return Some(Closed::Cancel);
         }
         if is_input {
-            if pressed.contains(&KeyCode::Backspace) {
-                if self.selected {
-                    self.edit.clear();
-                } else {
-                    self.edit.pop();
-                }
+            if key(KeyCode::Backspace) {
+                self.edit.clear();
                 self.selected = false;
             }
             // Only a single digit 1..9 can be typed.
-            for &c in chars {
-                if ('1'..='9').contains(&c) {
-                    self.edit.clear();
-                    self.edit.push(c);
-                    self.selected = false;
-                }
+            if let Some(&c) = chars.iter().rev().find(|c| ('1'..='9').contains(*c)) {
+                self.edit = c.to_string();
+                self.selected = false;
             }
         }
-        let at = self.placed(crate::VIEW_W, crate::VIEW_H);
-        let buttons = self.buttons(at);
-        let hit = buttons.iter().position(|r| r.contains(mouse));
-        if is_mouse_button_pressed(MouseButton::Left) {
-            self.pressed = hit;
-        }
-        if is_mouse_button_released(MouseButton::Left) {
-            let p = self.pressed.take();
-            if p.is_some() && p == hit {
-                return if p == Some(0) { self.ok() } else { Some(None) };
+        self.clicks.update(&self.buttons, mouse).map(|i| {
+            if i == 0 {
+                Closed::Ok
+            } else {
+                Closed::Cancel
             }
-        }
-        None
+        })
     }
 
-    pub fn draw(&self, vw: f32, vh: f32) {
-        let r = self.placed(vw, vh);
-        // Frame + title bar
+    pub fn draw(&self, mouse: Vec2) {
+        let r = self.rect;
+        // Frame and caption
         draw_rectangle(r.x - 1.0, r.y - 1.0, r.w + 2.0, r.h + 2.0, BLACK);
         draw_rectangle(r.x, r.y, r.w, r.h, WHITE);
         draw_rectangle(r.x, r.y, r.w, 20.0, NAVY);
@@ -248,7 +232,8 @@ impl Dialog {
                 text(&self.edit, e.x + 4.0, e.y + 16.0, WHITE);
             } else {
                 text(&self.edit, e.x + 4.0, e.y + 16.0, BLACK);
-                if (get_time() * 2.0) as i64 % 2 == 0 {
+                let caret_on = (get_time() * 2.0) as i64 % 2 == 0;
+                if caret_on {
                     draw_rectangle(e.x + 5.0 + tw, e.y + 4.0, 1.0, e.h - 8.0, BLACK);
                 }
             }
@@ -256,15 +241,8 @@ impl Dialog {
             text(body, r.x + (r.w - text_w(body)) / 2.0, r.y + 48.0, BLACK);
         }
 
-        let labels: &[&str] = if self.modal == Modal::LevelInput {
-            &["OK", "Cancel"]
-        } else {
-            &["OK"]
-        };
-        let mouse = cur_mouse();
-        for (i, b) in self.buttons(r).iter().enumerate() {
-            let down = self.pressed == Some(i) && b.contains(mouse);
-            button(*b, labels[i], i == 0, down);
+        for (i, (&b, label)) in self.buttons.iter().zip(self.labels).enumerate() {
+            button(b, label, i == 0, self.clicks.is_down(i, b, mouse));
         }
     }
 }
@@ -283,8 +261,8 @@ fn button(b: Rect, label: &str, default: bool, down: bool) {
     let (hi, lo) = if down { (DARK, GRAY) } else { (WHITE, DARK) };
     draw_rectangle(i.x, i.y, i.w, 2.0, hi);
     draw_rectangle(i.x, i.y, 2.0, i.h, hi);
-    draw_rectangle(i.x, i.y + i.h - 2.0, i.w, 2.0, lo);
-    draw_rectangle(i.x + i.w - 2.0, i.y, 2.0, i.h, lo);
+    draw_rectangle(i.x, i.bottom() - 2.0, i.w, 2.0, lo);
+    draw_rectangle(i.right() - 2.0, i.y, 2.0, i.h, lo);
     let off = if down { 1.0 } else { 0.0 };
     text(
         label,

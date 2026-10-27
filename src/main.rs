@@ -2,9 +2,9 @@
 //! Originally written in Borland Turbo Pascal for Windows 1.5 for Windows 3.x;
 //! ported to Rust with macroquad.
 //!
-//! main.rs is the "TRock window": it owns the window, the menu bar, the
-//! 200ms timer, keyboard auto-repeat and the Windows-3.1-style message boxes.
-//! All game rules live in game.rs.
+//! This file is the window: the menu bar, the 200 ms timer, keyboard
+//! auto-repeat, the message boxes and scaling.  The game itself is in
+//! `game/`.
 
 mod assets;
 mod game;
@@ -12,39 +12,39 @@ mod rng;
 mod script;
 mod ui;
 
-use game::{Game, FB_H, FB_W};
+use game::{Dir, Game, FB_H, FB_W};
 use macroquad::prelude::*;
-use ui::{Dialog, MenuBar, MENU_H};
+use script::Action;
+use ui::{Closed, Dialog, MenuBar, MenuCmd, MENU_H};
 
-/// The virtual screen: menu bar + 620x400 client area.
-const VIEW_W: f32 = FB_W as f32;
-const VIEW_H: f32 = FB_H as f32 + MENU_H;
+/// The virtual screen: menu bar above the 620 x 400 board.
+const VIEW: Vec2 = Vec2::new(FB_W as f32, FB_H as f32 + MENU_H);
 
-/// SetTimer(HWindow, 0, 200, nil); Game::timer skips ticks while a box is open.
+/// The original's `SetTimer(HWindow, 0, 200, nil)`.
 const TICK: f32 = 0.2;
-/// Windows' default keyboard repeat: ~500ms delay, ~30 repeats per second.
+/// Windows' default keyboard repeat: about 500 ms delay, then 30 a second.
 const REPEAT_DELAY: f32 = 0.5;
 const REPEAT_RATE: f32 = 1.0 / 30.0;
+/// Windows 3.1 desktop teal, around the scaled view.
+const DESKTOP: Color = Color::new(0.0, 0.5, 0.5, 1.0);
 
 fn window_conf() -> Conf {
     Conf {
         window_title: "Rock".to_owned(),
-        window_width: (VIEW_W * 2.0) as i32,
-        window_height: (VIEW_H * 2.0) as i32,
+        window_width: (VIEW.x * 2.0) as i32,
+        window_height: (VIEW.y * 2.0) as i32,
         window_resizable: true,
         icon: Some(assets::icon()),
         ..Default::default()
     }
 }
 
-/// What a key press means to TRock.Keyboard: Some(1..=4) for the arrow keys
-/// (VK_LEFT..VK_DOWN minus 36), None for anything else.
-fn arrow_of(k: KeyCode) -> Option<usize> {
+fn arrow_dir(k: KeyCode) -> Option<Dir> {
     match k {
-        KeyCode::Left => Some(1),
-        KeyCode::Up => Some(2),
-        KeyCode::Right => Some(3),
-        KeyCode::Down => Some(4),
+        KeyCode::Left => Some(Dir::Left),
+        KeyCode::Up => Some(Dir::Up),
+        KeyCode::Right => Some(Dir::Right),
+        KeyCode::Down => Some(Dir::Down),
         _ => None,
     }
 }
@@ -57,9 +57,34 @@ fn alt_down() -> bool {
     is_key_down(KeyCode::LeftAlt) || is_key_down(KeyCode::RightAlt)
 }
 
-/// Keys that Windows sends as WM_SYSKEYDOWN, which TRock.Keyboard never saw.
-fn is_sys_key(k: KeyCode) -> bool {
-    matches!(k, KeyCode::LeftAlt | KeyCode::RightAlt | KeyCode::F10) || alt_down()
+/// Where the view sits in the window: whole-number scaling when it fits,
+/// centred.
+struct Layout {
+    scale: f32,
+    origin: Vec2,
+}
+
+impl Layout {
+    fn current() -> Self {
+        let window = vec2(screen_width(), screen_height());
+        let fit = (window / VIEW).min_element();
+        let scale = if fit >= 1.0 { fit.floor() } else { fit };
+        Layout {
+            scale,
+            origin: ((window - VIEW * scale) / 2.0).floor(),
+        }
+    }
+
+    fn to_view(&self, window_pos: Vec2) -> Vec2 {
+        (window_pos - self.origin) / self.scale
+    }
+}
+
+/// The arrow key being held, and the time until it next repeats.
+struct Held {
+    key: KeyCode,
+    dir: Dir,
+    wait: f32,
 }
 
 #[macroquad::main(window_conf)]
@@ -67,157 +92,140 @@ async fn main() {
     let mut game = Game::new(assets::sprites());
     game.paint();
 
-    let mut fb_image = Image::gen_image_color(FB_W as u16, FB_H as u16, WHITE);
-    let fb_tex = Texture2D::from_image(&fb_image);
-    fb_tex.set_filter(FilterMode::Nearest);
+    let board_tex = Texture2D::from_rgba8(FB_W as u16, FB_H as u16, game.pixels());
+    board_tex.set_filter(FilterMode::Nearest);
 
-    let target = render_target(VIEW_W as u32, VIEW_H as u32);
+    let target = render_target(VIEW.x as u32, VIEW.y as u32);
     target.texture.set_filter(FilterMode::Nearest);
-    let mut cam = Camera2D::from_display_rect(Rect::new(0.0, 0.0, VIEW_W, VIEW_H));
-    cam.render_target = Some(target.clone());
+    let mut view_cam = Camera2D::from_display_rect(Rect::new(0.0, 0.0, VIEW.x, VIEW.y));
+    view_cam.render_target = Some(target.clone());
 
     let mut menu = MenuBar::new();
     let mut dialog: Option<Dialog> = None;
-    let mut tick_acc = 0.0f32;
-    let mut repeat: Option<(KeyCode, f32)> = None;
+    let mut since_tick = 0.0;
+    let mut held: Option<Held> = None;
     let mut script = script::Script::from_env();
 
     loop {
         let dt = get_frame_time().min(0.25);
+        let layout = Layout::current();
+        let mouse = layout.to_view(mouse_position().into());
 
-        // Where the virtual screen sits in the real window.
-        let sw = screen_width();
-        let sh = screen_height();
-        let mut scale = (sw / VIEW_W).min(sh / VIEW_H);
-        if scale >= 1.0 {
-            scale = scale.floor();
-        }
-        let ox = ((sw - VIEW_W * scale) / 2.0).floor();
-        let oy = ((sh - VIEW_H * scale) / 2.0).floor();
-        let (mx, my) = mouse_position();
-        let mouse = vec2((mx - ox) / scale, (my - oy) / scale);
-        ui::set_mouse(mouse);
-
-        // Scripted input (test automation only; does nothing unless
-        // ROCK_SCRIPT is set).
+        // Scripted input, for automated testing; empty unless ROCK_SCRIPT
+        // is set.
         let scripted = script.next_frame();
 
-        // Keep the on-screen dialog in step with the game's modal stack.
-        match (game.modal().cloned(), &dialog) {
-            (Some(m), Some(d)) if d.modal == m => {}
-            (Some(m), _) => dialog = Some(Dialog::new(m, &game.level_text)),
-            (None, _) => dialog = None,
-        }
+        // Show the game's open box, if it has one.
+        dialog = match (game.modal(), dialog.take()) {
+            (Some(m), Some(d)) if d.modal == m => Some(d),
+            (Some(m), _) => Some(Dialog::new(m, &game.level().to_string(), VIEW)),
+            (None, _) => None,
+        };
 
-        // ---- input ----------------------------------------------------
+        // ---- input --------------------------------------------------------
         let mut pressed: Vec<KeyCode> = get_keys_pressed().into_iter().collect();
         let mut chars: Vec<char> = std::iter::from_fn(get_char_pressed).collect();
-        let mut menu_cmd = None;
-        for s in &scripted {
-            match s {
-                script::Action::Key(k) => pressed.push(*k),
-                script::Action::Char(c) => chars.push(*c),
-                script::Action::About => menu_cmd = Some(ui::MenuCmd::About),
-                script::Action::Level => menu_cmd = Some(ui::MenuCmd::Level),
-                _ => {}
+        let mut command = None;
+        for action in &scripted {
+            match action {
+                Action::Key(k) => pressed.push(*k),
+                Action::Char(c) => chars.push(*c),
+                Action::About => command = Some(MenuCmd::About),
+                Action::Level => command = Some(MenuCmd::Level),
+                Action::Shot(_) | Action::Quit => {}
             }
         }
 
-        if let Some(d) = dialog.as_mut() {
-            repeat = None;
-            if let Some(result) = d.handle_input(&pressed, &chars, mouse) {
-                game.close_modal(result);
+        if let Some(d) = &mut dialog {
+            held = None;
+            if let Some(closed) = d.handle_input(&pressed, &chars, mouse) {
+                let text = (closed == Closed::Ok).then(|| d.text().to_owned());
+                game.close_modal(text.as_deref());
                 dialog = None;
             }
         } else {
             if alt_down() {
                 if pressed.contains(&KeyCode::A) {
-                    menu_cmd = Some(ui::MenuCmd::About);
+                    command = Some(MenuCmd::About);
                 } else if pressed.contains(&KeyCode::L) {
-                    menu_cmd = Some(ui::MenuCmd::Level);
+                    command = Some(MenuCmd::Level);
                 }
             }
-            if menu_cmd.is_none() {
-                menu_cmd = menu.handle_mouse(mouse);
-            }
-            match menu_cmd {
-                Some(ui::MenuCmd::About) => game.menu_about(),
-                Some(ui::MenuCmd::Level) => game.menu_level(),
-                None => {
-                    // Only the arrow keys do anything, so Shift (or any other
-                    // key) doesn't interrupt a held arrow's auto-repeat.
-                    for k in pressed {
-                        if is_sys_key(k) || arrow_of(k).is_none() {
-                            continue;
+            command = command.or_else(|| menu.handle_mouse(mouse));
+            match command {
+                Some(MenuCmd::About) => game.menu_about(),
+                Some(MenuCmd::Level) => game.menu_level(),
+                None if !alt_down() => {
+                    // Only the arrow keys do anything, so other keys don't
+                    // interrupt a held arrow's repeat.
+                    for key in pressed {
+                        if let Some(dir) = arrow_dir(key) {
+                            game.key_down(dir, shift_down());
+                            held = Some(Held {
+                                key,
+                                dir,
+                                wait: REPEAT_DELAY,
+                            });
                         }
-                        game.key_down(arrow_of(k), shift_down());
-                        repeat = Some((k, REPEAT_DELAY));
                     }
-                    // Auto-repeat of the last key pressed, like WM_KEYDOWN.
-                    if let Some((k, t)) = repeat.as_mut() {
-                        if !is_key_down(*k) {
-                            repeat = None;
-                        } else {
-                            *t -= dt;
-                            while *t <= 0.0 {
-                                *t += REPEAT_RATE;
-                                game.key_down(arrow_of(*k), shift_down());
-                            }
+                    held = held.filter(|h| is_key_down(h.key));
+                    if let Some(h) = &mut held {
+                        h.wait -= dt;
+                        while h.wait <= 0.0 {
+                            h.wait += REPEAT_RATE;
+                            game.key_down(h.dir, shift_down());
                         }
                     }
                 }
+                None => {}
             }
         }
 
-        // ---- WM_TIMER (runs even while a box is open) ------------------
-        tick_acc += dt;
-        if tick_acc >= TICK {
-            tick_acc -= TICK;
-            if tick_acc >= TICK {
-                tick_acc = 0.0; // Windows coalesces missed WM_TIMERs
-            }
+        // ---- the timer (the game ignores it while a box is open) ---------
+        since_tick += dt;
+        if since_tick >= TICK {
+            // Like WM_TIMER, ticks missed while the program was busy are
+            // not made up.
+            since_tick = if since_tick >= 2.0 * TICK {
+                0.0
+            } else {
+                since_tick - TICK
+            };
             game.timer();
         }
 
-        // ---- draw -------------------------------------------------------
-        for (i, px) in game.fb.iter().enumerate() {
-            let p = &mut fb_image.bytes[i * 4..i * 4 + 4];
-            p[0] = (px >> 16) as u8;
-            p[1] = (px >> 8) as u8;
-            p[2] = *px as u8;
-            p[3] = 255;
+        // ---- draw ----------------------------------------------------------
+        if game.take_redraw() {
+            board_tex.update_from_bytes(FB_W as u32, FB_H as u32, game.pixels());
         }
-        fb_tex.update(&fb_image);
 
-        set_camera(&cam);
+        set_camera(&view_cam);
         clear_background(WHITE);
-        draw_texture(&fb_tex, 0.0, MENU_H, WHITE);
-        menu.draw(dialog.is_none());
+        draw_texture(&board_tex, 0.0, MENU_H, WHITE);
+        menu.draw(dialog.is_none(), mouse);
         if let Some(d) = &dialog {
-            d.draw(VIEW_W, VIEW_H);
+            d.draw(mouse);
         }
 
         set_default_camera();
-        clear_background(Color::from_rgba(0, 128, 128, 255)); // Win 3.1 desktop teal
+        clear_background(DESKTOP);
         draw_texture_ex(
             &target.texture,
-            ox,
-            oy,
+            layout.origin.x,
+            layout.origin.y,
             WHITE,
             DrawTextureParams {
-                dest_size: Some(vec2(VIEW_W * scale, VIEW_H * scale)),
+                dest_size: Some(VIEW * layout.scale),
                 // Render targets come out upside down in macroquad.
                 flip_y: true,
                 ..Default::default()
             },
         );
 
-        for s in &scripted {
-            match s {
-                script::Action::Shot(path) => {
-                    get_screen_data().export_png(path);
-                }
-                script::Action::Quit => return,
+        for action in scripted {
+            match action {
+                Action::Shot(path) => get_screen_data().export_png(&path),
+                Action::Quit => return,
                 _ => {}
             }
         }

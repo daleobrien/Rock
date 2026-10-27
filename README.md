@@ -1,9 +1,10 @@
 # ROCK, in Rust
 
 A port of **ROCK** (Dale O'Brien, January 1993, "Beta Verison 1.0"), originally
-written in Borland Turbo Pascal for Windows 1.5 for Windows 3.x. The original
-source is in `Org Pascal/`; this folder holds the Rust version and
-everything extracted from `ROCK20.RES`.
+written in Borland Turbo Pascal for Windows 1.5 for Windows 3.x. This folder
+holds the Rust version and everything extracted from `ROCK20.RES`. The
+original Pascal source is not part of this repository; see
+[The original source](#the-original-source) for what it is and where it lives.
 
 ![All nine levels](screenshots/all_levels.png)
 
@@ -16,7 +17,12 @@ You need a Rust toolchain (https://rustup.rs).
 It uses [macroquad](https://macroquad.rs), so it builds as-is on Windows,
 macOS and Linux (on Linux it needs the usual X11/GL development libraries).
 All the bitmaps are compiled into the binary, so `target/release/rock` runs on
-its own. `cargo test` runs the game-logic tests.
+its own.
+
+`cargo test` runs the tests. One of them plays every level for 3,000 random
+moves and checks the result against a fingerprint recorded from the first,
+line-by-line version of the port, so any accidental change to how the game
+plays or looks is caught.
 
 ## The game
 
@@ -57,11 +63,42 @@ of every level. The port uses Turbo Pascal's exact generator, which I checked
 against the code linked into `ROCK.EXE`, plus the original's order of
 evaluating the row and column, so the layouts match the original.
 
+## The original source
+
+The port is based entirely on the original 1993 program, which is kept
+separately in the `Pascel ROCK` folder inside Dale's `ROCK` folder. On Dale's
+Mac that is `~/Code/ROCK/Pascel ROCK/`. The game rules were ported line by
+line from the Pascal units, every image came out of the resource file, and the
+random-number behaviour was checked against the compiled program.
+
+| File | Date | What it is |
+|---|---|---|
+| `ROCK.PAS` | 25 Apr 1993 | The main program: the ObjectWindows application and window, the 200 ms timer, keyboard and mouse handlers, painting, and the About and Level menu commands. Its `{$D}` line reads "Dale O'Brien, Beta Verison of Rock, 1993, Jan, Coded using Borland TPW 1.5". |
+| `ROCK_FUC.PAS` | 24 Apr 1993 | The `Rock_Fuc` unit: the game logic (level setup, falling and rolling, the creatures, the morph, scoring, drawing cells). Ported to `src/game/`. |
+| `ROCK_VAR.PAS` | 24 Apr 1993 | The `Rock_Var` unit: grid size, constants, types and the global game state. Ported to `src/game/`. |
+| `ROCK20.RES` | 25 Apr 1993 | The Windows 3.x resource file linked in with `{$R rock20.res}`: 31 bitmaps, the icon and the menu. Extracted into `resources/`. |
+| `ROCK.EXE` | 25 Apr 1993 | The compiled 16-bit Windows program. Used to confirm the resources and Turbo Pascal's `Random`. |
+| `ROCK_FUC.TPU`, `ROCK_VAR.TPU` | 24 Apr 1993 | Compiled Turbo Pascal units for the two `.PAS` units. |
+| `ROCK.RTF` | 15 Jan 1993 | The start of a WinHelp help file that was never finished or hooked up. |
+| `ROCK.zip` | 2010 | A Mac archive of the same files (plus editor swap files), with the 1993 timestamps preserved. |
+
+To build the original you would need Borland Turbo Pascal for Windows 1.5
+(its `WObjects`, `WinTypes`, `WinProcs`, `Strings`, `StdDlgs` and `WinCrt`
+units) and Windows 3.x to run it.
+
 ## Layout
 
 | Path | What it is |
 |---|---|
-| `src/game.rs` | The game rules: a close, line-by-line port of `ROCK_FUC.PAS`, `ROCK_VAR.PAS` and the handlers in `ROCK.PAS`. Pascal names are kept in snake_case (`drop_all`, `lifemove`, `set_square`...). |
+| `src/game/mod.rs` | The `Game` type the window drives: timer, keys, menu commands and message boxes |
+| `src/game/tile.rs` | What a cell can hold (boulder, diamond, creature frame...) and what each kind does |
+| `src/game/board.rs` | The 31 x 20 board, positions and directions |
+| `src/game/physics.rs` | Falling and rolling, and the morph |
+| `src/game/creatures.rs` | The wall-following creatures |
+| `src/game/player.rs` | Moving, digging, pushing and dying |
+| `src/game/levels.rs` | The nine levels |
+| `src/game/render.rs` | The framebuffer and bitmaps it draws into |
+| `src/game/tests.rs` | Tests |
 | `src/rng.rs` | Turbo Pascal's `Random`, bit for bit |
 | `src/main.rs` | Window, 200 ms timer, keyboard, scaling |
 | `src/ui.rs` | Windows 3.1-style menu bar, message boxes and the Level input dialog |
@@ -89,15 +126,15 @@ shipped program.
 
 ## How faithful is it
 
-The game logic is ported statement by statement, and the screen is drawn the
-same way. The original never kept a picture of the screen: it `BitBlt`ed each
+The game logic was first ported statement by statement and then reorganised
+into idiomatic Rust, with a test checking that it still plays exactly the same.
+The screen is drawn the same way as the original. The original never kept a picture of the screen: it `BitBlt`ed each
 cell straight to the window as it changed and flashed the exit with
 `InvertRect`. The port keeps a 620 x 400 framebuffer and does the same blits
 into it, so things like the flashing exit and the stretched score bar look the
 same.
 
-**Bugs in the original that the port fixes.** Each fix is marked with a
-comment in `src/game.rs`, `src/main.rs` or `src/ui.rs`.
+**Bugs in the original that the port fixes:**
 
 * **Dialogs pause the game.** In the original, the 200 ms timer kept running
   behind message boxes and the Level dialog, so creatures kept moving and you
@@ -154,3 +191,14 @@ comment in `src/game.rs`, `src/main.rs` or `src/ui.rs`.
 * **Repainting after a dialog.** Windows repainted only the area a closed
   dialog had covered. The port repaints the whole board, which can change
   which phase the exit flash is in.
+* `ROCK.RTF` is the start of a WinHelp help file that was never hooked up, so
+  there is nothing to port. The Mac files in the `ROCK` folder
+  (`ROCK.xcodeproj`, `Start.pas`, `MainUnit.pas`) are a separate Free
+  Pascal/Carbon project and were left alone.
+
+## Re-extracting the resources
+
+Point the extractor at `ROCK20.RES` in the original source folder. On Dale's
+Mac:
+
+    python3 tools/extract_res.py ~/Code/ROCK/"Pascel ROCK"/ROCK20.RES resources
