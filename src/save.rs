@@ -6,13 +6,21 @@
 //! * Linux: `$XDG_DATA_HOME/rock/level.txt` (or `~/.local/share/rock/`)
 //!
 //! Saving is best effort: if the file can't be read or written the game
-//! just starts at level 1.
+//! just starts at level 1. In a web browser (`make web`) there is no data
+//! folder, so it always starts at level 1 there.
 
 use crate::game::LAST_LEVEL;
 use std::path::{Path, PathBuf};
 
+#[cfg(not(target_arch = "wasm32"))]
 fn file() -> Option<PathBuf> {
     directories::ProjectDirs::from("", "", "Rock").map(|d| d.data_dir().join("level.txt"))
+}
+
+/// In a web browser: nowhere to keep it.
+#[cfg(target_arch = "wasm32")]
+fn file() -> Option<PathBuf> {
+    None
 }
 
 /// The saved level, if there is a valid one.

@@ -5,8 +5,12 @@ edition = "2021"
 description = "Rust port of ROCK, Dale O'Brien's 1993 Windows 3.x boulder/diamond game"
 
 [dependencies]
-directories = "6.0.0"
 macroquad = { version = "0.4", default-features = false }
+
+# Where the level is remembered between runs (see src/save.rs). Not in the
+# browser (`make web`), which has no data folder.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+directories = "6.0.0"
 
 [profile.release]
 opt-level = 3

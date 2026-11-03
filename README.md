@@ -24,6 +24,17 @@ moves and checks the result against a fingerprint recorded from the first,
 line-by-line version of the port, so any accidental change to how the game
 plays or looks is caught.
 
+### In a web browser
+
+`make web` builds the same program for WebAssembly into `web/dist`:
+`rock.wasm`, the page (`web/index.html`) and macroquad's JavaScript loader
+(`mq_js_bundle.js`, fetched into `web/` the first time). It adds the
+`wasm32-unknown-unknown` target the first time too. `make serve` builds it
+and serves it at http://localhost:8000 (the page won't load from
+`file://`), and `make deploy` builds it and uploads it to
+`s3://rock-do-id-au/web/static/` with your AWS CLI credentials. In the
+browser the level isn't remembered between visits: it starts at level 1.
+
 ## The game
 
 It is a Boulder Dash–style game played on a 31 x 20 grid of 20-pixel cells.

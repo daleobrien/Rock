@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rock</title>
+  <style>
+    /* The Windows 3.1 desktop teal round the game, as in the window. */
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #008080; }
+    #glcanvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      outline: none;
+      /* Scaled up by the browser on a Retina screen: keep the pixels sharp. */
+      image-rendering: pixelated;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- macroquad draws into this canvas (it must be called glcanvas); it
+       takes the keys once it has the focus. -->
+  <canvas id="glcanvas" tabindex="1"></canvas>
+  <!-- macroquad's loader, fetched by `make web` (see the Makefile). -->
+  <script src="mq_js_bundle.js"></script>
+  <script>
+    load("rock.wasm");
+    document.getElementById("glcanvas").focus();
+  </script>
+</body>
+</html>

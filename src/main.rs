@@ -26,6 +26,9 @@ const TICK: f32 = 0.2;
 /// Windows' default keyboard repeat: about 500 ms delay, then 30 a second.
 const REPEAT_DELAY: f32 = 0.5;
 const REPEAT_RATE: f32 = 1.0 / 30.0;
+/// The least share of the window's fit a whole-number scale must fill to be
+/// used (see [`Layout`]).
+const WHOLE_ENOUGH: f32 = 0.85;
 /// Windows 3.1 desktop teal, around the scaled view.
 const DESKTOP: Color = Color::new(0.0, 0.5, 0.5, 1.0);
 
@@ -58,8 +61,10 @@ fn alt_down() -> bool {
     is_key_down(KeyCode::LeftAlt) || is_key_down(KeyCode::RightAlt)
 }
 
-/// Where the view sits in the window: whole-number scaling when it fits,
-/// centred.
+/// Where the view sits in the window, centred: scaled by a whole number
+/// when that fills most of the window, so every pixel is the same size;
+/// otherwise as big as fits. (A browser window, a little under twice the
+/// view's size, would round down to half of what fits.)
 struct Layout {
     scale: f32,
     origin: Vec2,
@@ -69,7 +74,12 @@ impl Layout {
     fn current() -> Self {
         let window = vec2(screen_width(), screen_height());
         let fit = (window / VIEW).min_element();
-        let scale = if fit >= 1.0 { fit.floor() } else { fit };
+        let whole = fit.floor();
+        let scale = if whole >= 1.0 && whole >= fit * WHOLE_ENOUGH {
+            whole
+        } else {
+            fit
+        };
         Layout {
             scale,
             origin: ((window - VIEW * scale) / 2.0).floor(),
