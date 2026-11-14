@@ -1,8 +1,8 @@
 # ROCK, in Rust
 
-A port of **ROCK** (Dale O'Brien, January 1993, "Beta Verison 1.0"), originally
-written in Borland Turbo Pascal for Windows 1.5 for Windows 3.x. This folder
-holds the Rust version and everything extracted from `ROCK20.RES`. The
+A port of **ROCK** (January 1993, "Beta Verison 1.0"), originally
+written in Borland Turbo Pascal 1.5 for Windows targeting Windows 3.x. This folder
+holds the Rust version with all graphical resources extracted from `ROCK20.RES`. The
 original Pascal source is in [`Org Pascal/`](Org%20Pascal/); see
 [The original source](#the-original-source) for what each file is.
 
