@@ -27,8 +27,9 @@ plays or looks is caught.
 (`mq_js_bundle.js`, fetched into `web/` the first time). It adds the
 `wasm32-unknown-unknown` target the first time too. `make serve` builds it
 and serves it at http://localhost:8000 (the page won't load from
-`file://`), and `make deploy` builds it and uploads it to
-`s3://rock-do-id-au/web/static/` with your AWS CLI credentials. In the
+`file://`), and `make deploy` builds it and deploys it to Cloudflare, where
+rock.do.id.au is a Worker serving `web/dist` (`wrangler.jsonc`). Pushes to
+`main` deploy it through `.github/workflows/web.yml`. In the
 browser the level isn't remembered between visits: it starts at level 1.
 
 ## Layout

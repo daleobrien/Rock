@@ -1,0 +1,16 @@
+// rock.do.id.au: a Cloudflare Worker that only serves web/dist/ (built by
+// `make web`). Cloudflare compresses the wasm as it serves it. The files keep
+// their names, and Cloudflare's default has browsers check them every time.
+// Deployed by .github/workflows/web.yml.
+{
+  "name": "rock",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "./web/dist" },
+  // Cloudflare makes the DNS records and certificates. No other DNS record may
+  // exist for these names, and the API token needs Zone → Workers Routes: Edit.
+  "routes": [
+    { "pattern": "rock.do.id.au", "custom_domain": true },
+    { "pattern": "www.rock.do.id.au", "custom_domain": true }
+  ],
+  "workers_dev": true
+}
