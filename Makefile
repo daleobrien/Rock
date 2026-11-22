@@ -4,9 +4,6 @@
 .PHONY: help build run test web serve deploy clean
 
 PORT ?= 8000
-# Where `make deploy` puts the browser version. Your AWS CLI credentials are
-# used; pick a profile with AWS_PROFILE=..., e.g. `make deploy AWS_PROFILE=rock`.
-WEB_BUCKET ?= s3://rock-do-id-au/web/static/
 
 # The browser version is the same program built for WebAssembly: macroquad
 # runs there as it is, loaded by its own small JavaScript loader (no
@@ -23,7 +20,7 @@ help:
 	@echo "  make test     cargo test"
 	@echo "  make web      build the browser version (WebAssembly) into web/dist"
 	@echo "  make serve    make web, then serve it at http://localhost:$(PORT)"
-	@echo "  make deploy   make web, then upload web/dist to $(WEB_BUCKET)"
+	@echo "  make deploy   make web, then deploy web/dist to Cloudflare (needs CLOUDFLARE_API_TOKEN)"
 	@echo "  make clean    remove the builds"
 
 build:
@@ -50,18 +47,11 @@ serve: web
 	@echo "Rock at http://localhost:$(PORT)  (Ctrl-C to stop)"
 	cd web/dist && python3 -m http.server $(PORT)
 
-# The files keep their names from one build to the next, so browsers are
-# told to check for a newer copy each time (unchanged ones come back 304).
-# The wasm goes up on its own as application/wasm, which browsers need to
-# compile it as it streams in.
+# rock.do.id.au is a Cloudflare Worker serving web/dist (wrangler.jsonc). The
+# files keep their names from one build to the next, so browsers check for a
+# newer copy each time (Cloudflare's default; unchanged ones come back 304).
 deploy: web
-	@command -v aws >/dev/null || { echo "make deploy needs the AWS CLI: brew install awscli"; exit 1; }
-	aws s3 sync web/dist/ $(WEB_BUCKET) --exclude "*.wasm" --cache-control no-cache
-	for wasm in web/dist/*.wasm; do \
-		aws s3 cp "$$wasm" "$(WEB_BUCKET)$$(basename "$$wasm")" \
-			--content-type application/wasm --cache-control no-cache; \
-	done
-	@echo "Deployed web/dist to $(WEB_BUCKET)"
+	npx --yes wrangler@4 deploy
 
 clean:
 	cargo clean
