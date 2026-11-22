@@ -3,6 +3,10 @@
 # main that touches the game or the page, or by hand from the Actions tab. Pull
 # requests are built and dry-run, but not deployed.
 #
+# The built site is cached, keyed by a hash of everything it's built from, so a
+# run whose inputs have been built before skips Rust and the build entirely and
+# just deploys (Wrangler then uploads nothing that hasn't changed).
+#
 # Set once in the repository's Settings → Secrets and variables → Actions: the
 # secret CLOUDFLARE_API_TOKEN (Workers Scripts: Edit, and Zone → Workers Routes:
 # Edit for do.id.au) and the variable CLOUDFLARE_ACCOUNT_ID.
@@ -42,15 +46,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Built site from an earlier run
+        id: dist
+        uses: actions/cache@v4
+        with:
+          path: web/dist
+          key: rock-dist-${{ hashFiles('src/**', 'levels/**', 'resources/**', 'web/index.html', 'web/mq_js_bundle.js', 'Cargo.toml', 'Cargo.lock', 'Makefile') }}
+
       - name: Rust, with the WebAssembly target
+        if: steps.dist.outputs.cache-hit != 'true'
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
 
       - name: Cache the build
+        if: steps.dist.outputs.cache-hit != 'true'
         uses: Swatinem/rust-cache@v2
 
       - name: Build
+        if: steps.dist.outputs.cache-hit != 'true'
         run: make web
 
       - name: Check the Worker (dry run)
